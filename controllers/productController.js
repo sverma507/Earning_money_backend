@@ -15,16 +15,16 @@ const addProduct = async (req, res) => {
   try {
     const { name, price, income, cycle, description, supply } = req.body;
     const img1 = req.files.img1.tempFilePath;
-    const img2 = req.files.img2.tempFilePath;
+    // const img2 = req.files.img2.tempFilePath;
 
     // Upload images to Cloudinary
     const uploadImg1 = await cloudinary.uploader.upload(img1, { folder: 'products' });
-    const uploadImg2 = await cloudinary.uploader.upload(img2, { folder: 'products' });
+    // const uploadImg2 = await cloudinary.uploader.upload(img2, { folder: 'products' });
 
     // Create a new product with Cloudinary image URLs
     const newProduct = new Product({
       img1: uploadImg1.secure_url,
-      img2: uploadImg2.secure_url,
+      // img2: uploadImg2.secure_url,
       name,
       price,
       income,

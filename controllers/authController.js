@@ -19,6 +19,13 @@ exports.signup = async (req, res) => {
     // Generate a referral code
     const referralCode = generateReferralCode();
 
+    if(referredBy){
+      const referringUser = await User.findOne({referralCode:referredBy});
+      referringUser.spinCount += 1;
+      await referringUser.save();
+    }
+    
+
     // Create a new user with original password
     const newUser = new User({
       mobileNumber,
@@ -29,6 +36,9 @@ exports.signup = async (req, res) => {
       answer
     });
 
+    
+    newUser.spinCount += 1;
+    
     await newUser.save();
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
     res.status(201).json({newUser, token });

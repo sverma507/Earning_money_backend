@@ -11,6 +11,7 @@ const LevelIncomeTransaction = require("../models/levelIncome");
 const GameIncomeTransaction = require("../models/gameIncome");
 const WithdrawPaymentRequest = require("../models/withdrawPaymentRequest");
 const ActivationTransaction = require("../models/activationTransaction");
+const SalaryTransaction = require('../models/userBusiness.js')
 // Payment Gateway API Details
 const API_URL = "https://tejafinance.in/api/prod/merchant/pg/payment/initiate";
 const TOKEN_URL = "https://tejafinance.in/api/prod/merchant/getToken";
@@ -579,6 +580,15 @@ const checkBusiness = async () => {
       singleLeg = totalSum - powerLeg;
 
       await checkSalary(user._id, powerLeg, singleLeg);
+      // const dailySalaryTransaction = new SalaryTransaction({
+      //   user: user._id,
+      //   netIncome: uplineProfit,
+      //   fromUser: originalUser.referralCode, // Use the original user for fromUser
+      //   amount: dailyProfit,
+      //   level,
+      //   package: product.name,
+      // });
+      // await dailySalaryTransaction.save();
     }
     // return array;
     // console.log('array ==>',businessArray);
@@ -730,17 +740,27 @@ exports.calculateDailyProfits = async () => {
       dailyProfit,
       level
     ) => {
+      // Get current day of the week
+      const currentDay = new Date().getDay();
+
+      // Skip transaction creation on Saturday (6) and Sunday (0)
+      if (currentDay === 0 || currentDay === 6) {
+        console.log(`Skipping level income transaction for weekends.`);
+        return;
+      }
+
       if (!uplineUser.referredBy || level > 5) return; // Stop if no upline or beyond 5 levels
 
       const nextUplineUser = await User.findOne({
         referralCode: uplineUser.referredBy,
       });
+
       if (nextUplineUser) {
         // Define profit percentages for each level
         const profitPercentages = {
           1: 0.1, // 10% for direct referrals
           2: 0.05, // 5% for second-level referrals
-          3: 0.03, // 1% for fifth-level referrals
+          3: 0.03, // 3% for third-level referrals
         };
 
         const profitPercentage = profitPercentages[level] || 0;
@@ -754,7 +774,7 @@ exports.calculateDailyProfits = async () => {
         nextUplineUser.todayEarning += uplineProfit;
         await nextUplineUser.save();
 
-        // Record the transaction
+        // Record the transaction only on weekdays
         const levelTransaction = new LevelIncomeTransaction({
           user: nextUplineUser._id,
           netIncome: uplineProfit,
@@ -776,17 +796,26 @@ exports.calculateDailyProfits = async () => {
       }
     };
 
+    // Get current day of the week
+    const currentDay = new Date().getDay();
+
+    // Skip calculation on Saturday (6) and Sunday (0)
+    if (currentDay === 0 || currentDay === 6) {
+      console.log("No profits calculated on weekends.");
+      return;
+    }
+
     // Calculate daily profit for each user
     for (const user of users) {
       user.temporaryWallet = 0;
       user.todayEarning = 0;
       user.yesterdayWallet = user.wallet;
       user.withdrawlCount = 0;
+
       for (let i = 0; i < user.packages.length; i++) {
         let dailyProfit = 0;
         const packageId = user.packages[i];
         const purchaseDate = user.purchaseDate[i]; // Get the corresponding purchase date
-        user.claimBonus[i] = true;
 
         const product = await Product.findById(packageId);
         if (product) {
@@ -800,6 +829,12 @@ exports.calculateDailyProfits = async () => {
         }
 
         user.temporaryWallet += dailyProfit;
+
+        // Only set claimBonus if today is not Saturday or Sunday
+        if (currentDay !== 0 && currentDay !== 6) {
+          user.claimBonus[i] = true;
+        }
+
         await user.save();
 
         if (dailyProfit > 0) {
@@ -814,6 +849,7 @@ exports.calculateDailyProfits = async () => {
     console.error("Error calculating daily profits:", err);
   }
 };
+
 
 
 const updateDailySalaryForAllActiveUsers = async (req, res) => {

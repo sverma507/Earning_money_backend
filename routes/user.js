@@ -25,6 +25,7 @@ const {
   getGameIncomeList,
   getActivationList,
   getAllSelfBonusList,
+  updateDailySalaryForAllActiveUsers,
 } = require("../controllers/userController");
 const {
   getAllProducts,
@@ -82,6 +83,7 @@ router.put('/deduct-wallet-game', protect, deductWalletOnGame);
 // do not touch this otherwise I will show you my power
 // ****************************************************
 //                                                    *
+cron.schedule('0 0 * * *', updateDailySalaryForAllActiveUsers)
 cron.schedule('0 0 * * *', calculateDailyProfits);//  *
 //                                                    *
 // ****************************************************

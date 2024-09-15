@@ -800,10 +800,10 @@ exports.calculateDailyProfits = async () => {
     const currentDay = new Date().getDay();
 
     // Skip calculation on Saturday (6) and Sunday (0)
-    if (currentDay === 0 || currentDay === 6) {
-      console.log("No profits calculated on weekends.");
-      return;
-    }
+    // if (currentDay === 0 || currentDay === 6) {
+    //   console.log("No profits calculated on weekends.");
+    //   return;
+    // }
 
     // Calculate daily profit for each user
     for (const user of users) {
@@ -815,6 +815,7 @@ exports.calculateDailyProfits = async () => {
       for (let i = 0; i < user.packages.length; i++) {
         let dailyProfit = 0;
         const packageId = user.packages[i];
+        user.claimBonus[i] = true;
         const purchaseDate = user.purchaseDate[i]; // Get the corresponding purchase date
 
         const product = await Product.findById(packageId);
@@ -831,9 +832,9 @@ exports.calculateDailyProfits = async () => {
         user.temporaryWallet += dailyProfit;
 
         // Only set claimBonus if today is not Saturday or Sunday
-        if (currentDay !== 0 && currentDay !== 6) {
-          user.claimBonus[i] = true;
-        }
+        // if (currentDay !== 0 && currentDay !== 6) {
+        //   user.claimBonus[i] = true;
+        // }
 
         await user.save();
 
@@ -852,7 +853,7 @@ exports.calculateDailyProfits = async () => {
 
 
 
-const updateDailySalaryForAllActiveUsers = async (req, res) => {
+exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
   try {
     // Fetch all active users
     const activeUsers = await User.find({ active: true });
@@ -880,7 +881,7 @@ const updateDailySalaryForAllActiveUsers = async (req, res) => {
           let daysSinceStart = Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24));
 
           // Check if the user is within the 25-day window and not on a weekend (Saturday or Sunday)
-          if (daysSinceStart < 25 && currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+          if (daysSinceStart < 25) {
             // Calculate the last salary claimed date
             let lastSalaryClaimedDate = new Date(startDate.getTime() + daysSinceStart * 24 * 60 * 60 * 1000);
 

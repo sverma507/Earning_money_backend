@@ -184,9 +184,6 @@ exports.getAllWithdrawRequests = async (req, res) => {
   try {
     // Fetch all withdrawal requests from the database
     const withdrawRequests = await WithdrawPaymentRequest.find();
-    // console.log('withdrawl ==>',withdrawRequests);
-    
-    // Send success response with the list of withdrawal requests
     res.status(200).json(withdrawRequests);
   } catch (error) {
     console.error('Error fetching withdrawal requests:', error);
@@ -377,7 +374,8 @@ exports.activateUser = async (req, res) => {
       email: user.email,
       mobileNumber: user.mobileNumber,
       activateBy: 'admin',
-      package:packageData.name,  
+      package:packageData.name,
+      packagePrice:packageData.price  
     });
     // console.log('income ==>',profitTransaction);
     
@@ -392,8 +390,6 @@ exports.activateUser = async (req, res) => {
 };
 
 exports.getActivationList = async (req, res) => {
-  // console.log(req.params.id);
-  
   try {
     const result = await ActivationTransaction.find();
     console.log("result",result);

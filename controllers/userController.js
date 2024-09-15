@@ -495,6 +495,7 @@ exports.buyPackage = async (req, res) => {
       mobileNumber: user.mobileNumber,
       activateBy: "user",
       package: packageData.name,
+      packagePrice:packageData.price,
       wallet: user.rechargeWallet,
     });
     await activation.save();

@@ -6,6 +6,7 @@ const activationTransactionSchema = new mongoose.Schema({
   email: {type:String},
   activateBy: { type:String },
   package: { type: String, required: true },
+  packagePrice: {type: Number},
   wallet: { type:Number}
 }, { timestamps: true });
 

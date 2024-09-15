@@ -137,15 +137,36 @@ exports.withdrawPaymentRequest = async (req, res) => {
 
     // Retrieve the user's wallet balance
     const user = await User.findOne({_id:userId});
+    const referredUsers=await User.find({referredBy:user.referralCode})
     if (!user) {
       return res.status(404).json({ error: 'User not found.' });
     }
 
     // Check if the user has sufficient balance
    if(user.active){
-    // if(user.withdrawlCount == 1){
-    //   return res.status(400).json({ error: 'You can only withdrawl only once in a day' });
-    // }
+    if(user.withdrawlCount == 1){
+      return res.status(400).json({ error: 'You can only withdrawl only once in a day' });
+    }
+
+    let status = false;
+    let count = 0;
+
+    for(const referredUser of referredUsers){
+        if(referredUser.active){
+          count++;
+        }
+
+        if(count == 2){
+          status = true;
+          break;
+        }
+    }
+
+    if(!status){
+
+      return res.status(400).json({ error: 'Atleast  two users have to be activated with your referral code ' });
+
+    }
     if (withdrawalAmount > user.wallet) {
       return res.status(400).json({ error: 'Insufficient balance in wallet.' });
     }else if(withdrawalAmount < 200){

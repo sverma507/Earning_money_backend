@@ -24,48 +24,37 @@ const userSchema = new mongoose.Schema(
     active: { type: Boolean, default: false },
     purchaseDate: [{ type: Date }],
     temporaryWallet: { type: Number, default: 0 },
-    weeklySalaryActivation: [
-      { type: Boolean, default: false },
-      { type: Boolean, default: false },
-      { type: Boolean, default: false },
-      { type: Boolean, default: false },
-      { type: Boolean, default: false },
-      { type: Boolean, default: false },
-      { type: Boolean, default: false },
-      { type: Boolean, default: false },
-      { type: Boolean, default: false },
-      { type: Boolean, default: false },
-      { type: Boolean, default: false },
-      { type: Boolean, default: false },
-    ],
-    weeklySalaryStartDate: [
-      { type: Date, default: new Date().setHours(0, 0, 0, 0) },
-      { type: Date, default: new Date().setHours(0, 0, 0, 0) },
-      { type: Date, default: new Date().setHours(0, 0, 0, 0) },
-      { type: Date, default: new Date().setHours(0, 0, 0, 0) },
-      { type: Date, default: new Date().setHours(0, 0, 0, 0) },
-      { type: Date, default: new Date().setHours(0, 0, 0, 0) },
-      { type: Date, default: new Date().setHours(0, 0, 0, 0) },
-      { type: Date, default: new Date().setHours(0, 0, 0, 0) },
-      { type: Date, default: new Date().setHours(0, 0, 0, 0) },
-      { type: Date, default: new Date().setHours(0, 0, 0, 0) },
-      { type: Date, default: new Date().setHours(0, 0, 0, 0) },
-      { type: Date, default: new Date().setHours(0, 0, 0, 0) },
-    ],
-    weeklySalaryPrice: [
-      { type: Number, default: 50 },
-      { type: Number, default: 100 },
-      { type: Number, default: 150 },
-      { type: Number, default: 200 },
-      { type: Number, default: 500 },
-      { type: Number, default: 1000 },
-      { type: Number, default: 1500 },
-      { type: Number, default: 2000 },
-      { type: Number, default: 3000 },
-      { type: Number, default: 6000 },
-      { type: Number, default: 12000 },
-      { type: Number, default: 30000 },
-    ],
+    weeklySalaryActivation: {
+      type: [Boolean], 
+      default: [false, false, false, false, false, false, false, false, false, false, false, false]
+    },
+    weeklySalaryStartDate: {
+      type: [Date], 
+      default: [
+        new Date().setHours(0, 0, 0, 0), new Date().setHours(0, 0, 0, 0), 
+        new Date().setHours(0, 0, 0, 0), new Date().setHours(0, 0, 0, 0), 
+        new Date().setHours(0, 0, 0, 0), new Date().setHours(0, 0, 0, 0), 
+        new Date().setHours(0, 0, 0, 0), new Date().setHours(0, 0, 0, 0), 
+        new Date().setHours(0, 0, 0, 0), new Date().setHours(0, 0, 0, 0), 
+        new Date().setHours(0, 0, 0, 0), new Date().setHours(0, 0, 0, 0)
+      ]
+    },
+    weeklySalaryPrice: {
+      type: [Number],
+      default: [50, 100, 150, 200, 500, 1000, 1500, 2000, 3000, 6000, 12000, 30000]
+    },
+    powerLeg: {
+      type: [Number],
+      default: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    otherLeg: {
+      type: [Number],
+      default: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    salary: {
+      type: [Number],
+      default: [25000, 50000, 75000, 100000,250000, 500000, 750000, 1000000, 2500000, 5000000, 7500000, 10000000]
+    },
     claimBonus: [{ type: Boolean, default: true }],
     todayEarning: { type: Number, default: 0 },
     myRoi: [{ type: Number, default: 0 }],

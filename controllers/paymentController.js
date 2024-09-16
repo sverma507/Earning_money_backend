@@ -177,7 +177,7 @@ exports.withdrawPaymentRequest = async (req, res) => {
     return res.status(400).json({ error: 'Enter Amount in Multipe of 100!' });
      }
 
-    user.wallet -=withdrawalAmount;
+    user.wallet -= withdrawalAmount;
     user.withdrawlCount += 1;
     await user.save();
     // Create a new withdraw payment request

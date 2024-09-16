@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Admin = require('../models/admin.js');
 const crypto = require('crypto');
 const dotenv = require('dotenv');
+const salaryTransaction = require('../models/salaryTransaction.js');
 dotenv.config();
 
 const generateReferralCode = () => {
@@ -21,8 +22,13 @@ exports.signup = async (req, res) => {
 
     if(referredBy){
       const referringUser = await User.findOne({referralCode:referredBy});
-      referringUser.spinCount += 1;
-      await referringUser.save();
+      if(referringUser){
+        referringUser.spinCount += 1;
+        await referringUser.save();
+      }else{
+        return res.status(400).json({ error: `No user found with referral code:- ${referredBy}` });
+      }
+
     }
     
 
@@ -35,6 +41,8 @@ exports.signup = async (req, res) => {
       referredBy,
       answer
     });
+
+   
 
     
     newUser.spinCount += 1;

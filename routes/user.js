@@ -31,6 +31,7 @@ const {
   getAllProducts,
   getPoster,
 } = require("../controllers/productController");
+// const { getSalaryDetails } = require("../controllers/salary");
 
 // User routes
 router.get("/profile/:id", protect, getUserProfile);
@@ -59,6 +60,7 @@ router.get("/daily-income-list/:id", protect, getDailyIncomeList);
 router.get("/level-income-list/:id", protect, getLevelIncomeList);
 router.get("/referral-income-list/:id", protect, getReferralsIncomeList);
 router.get("/game-income-list/:id", protect, getGameIncomeList);
+// router.get("/api/v1/user/salary/:userId", protect, getSalaryDetails);
 
 
 // Game routes

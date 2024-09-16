@@ -11,7 +11,6 @@ const LevelIncomeTransaction = require("../models/levelIncome");
 const GameIncomeTransaction = require("../models/gameIncome");
 const WithdrawPaymentRequest = require("../models/withdrawPaymentRequest");
 const ActivationTransaction = require("../models/activationTransaction");
-const SalaryTransaction = require('../models/userBusiness.js')
 // Payment Gateway API Details
 const API_URL = "https://tejafinance.in/api/prod/merchant/pg/payment/initiate";
 const TOKEN_URL = "https://tejafinance.in/api/prod/merchant/getToken";
@@ -499,28 +498,24 @@ exports.buyPackage = async (req, res) => {
       wallet: user.rechargeWallet,
     });
     await activation.save();
+    
+    console.log(packageData);
 
-    // Calculate daily referral profits
-    // await this.calculateDailyReferralProfits(user._id);
-
-    // Return success response
+    await updateUplineBuisness(userId, packageId);
+    await checkBusiness();
     res
       .status(200)
       .json({
         message: "Package purchased successfully",
         package: packageData,
       });
-    console.log(packageData);
-
-    await updateUplineBuisness(userId, packageId);
-    await checkBusiness();
   } catch (error) {
     console.log("error=>", error);
     res.status(500).json({ error: error.message });
   }
 };
 
-exports.updateUplineBuisness = async (userId, packageId) => {
+const updateUplineBuisness = async (userId, packageId) => {
   try {
     const userData = await User.findById(userId);
     const productDetails = await Product.findById(packageId);
@@ -548,118 +543,181 @@ const checkBusiness = async () => {
   try {
     const users = await User.find({ active: true });
     console.log("users ==>", users);
+    // const userId = "66e6c7480dd1ce8efe621187"
 
     for (const user of users) {
-      const downlineUsers =
-        (await User.find({ referredBy: user.referralCode })) || [];
+      const downlineUsers = (await User.find({ referredBy: user.referralCode })) || [];
       console.log("downline ===>", downlineUsers);
 
       let businessArray = [];
       let powerLeg = 0;
       let singleLeg = 0;
-      let max = 0;
 
+      // Extract business values
       for (let i = 0; i < downlineUsers.length; i++) {
         businessArray.push(downlineUsers[i].business);
       }
+      console.log('business array ===>', businessArray);
+
+      // Ensure businessArray contains valid numbers
+      if (businessArray.length === 0) {
+        console.log("No valid business entries found.");
+        return;
+      }
 
       let totalSum = businessArray.reduce((acc, num) => acc + num, 0);
+      let max = Math.max(...businessArray);
 
+      // Check if any value is greater than the sum of the other values
       for (let num of businessArray) {
         let sumOfRemaining = totalSum - num;
 
-        // Check if the current number is greater than the sum of the remaining numbers
         if (num > sumOfRemaining) {
           powerLeg = num;
           break; // Return the first number that satisfies the condition
         }
       }
 
-      if (powerLeg == 0) {
-        powerLeg = Math.max(...businessArray);
+      // If no number satisfies the condition, take the largest number as powerLeg
+      if (powerLeg === 0) {
+        powerLeg = max;
       }
+
+      // Calculate the single leg as the remaining sum
       singleLeg = totalSum - powerLeg;
 
+      console.log("power ====>", powerLeg);
+      console.log('other ====>', singleLeg);
+
       await checkSalary(user._id, powerLeg, singleLeg);
-      // const dailySalaryTransaction = new SalaryTransaction({
-      //   user: user._id,
-      //   netIncome: uplineProfit,
-      //   fromUser: originalUser.referralCode, // Use the original user for fromUser
-      //   amount: dailyProfit,
-      //   level,
-      //   package: product.name,
-      // });
-      // await dailySalaryTransaction.save();
     }
-    // return array;
-    // console.log('array ==>',businessArray);
   } catch (error) {
-    //  return error
     console.log(error);
   }
 };
 
+
+// cron.schedule('* * * * *', checkBusiness);
+
 const checkSalary = async (userId, powerLeg, singleLeg) => {
+  console.log('salary userId =====> ',userId);
+  console.log('salary powerLeg =====> ',powerLeg);
+  console.log('salary singleLeg =====> ',singleLeg);
+  
   try {
     const userDetail = await User.findById(userId);
 
     if (powerLeg >=  27750000 / 2 && singleLeg >=  27750000 / 2) {
-      userDetail.weeklySalaryActivation[11] = true;
-      userDetail.weeklySalaryStartDate[11] = Date.now();
+      if(!userDetail.weeklySalaryActivation[11]){
+        userDetail.weeklySalaryActivation[11] = true;
+        userDetail.powerLeg[11] = powerLeg; 
+        userDetail.otherLeg[11] = singleLeg; 
+        userDetail.weeklySalaryStartDate[11] = Date.now();
+      }
     } 
     if (powerLeg >= 17750000 / 2 && singleLeg >= 17750000 / 2) {
-      userDetail.weeklySalaryActivation[10] = true;
-      userDetail.weeklySalaryStartDate[10] = Date.now();
+      if(!userDetail.weeklySalaryActivation[10]){
+        userDetail.weeklySalaryActivation[10] = true;
+        userDetail.powerLeg[10] = powerLeg; 
+        userDetail.otherLeg[10] = singleLeg;
+        userDetail.weeklySalaryStartDate[10] = Date.now();
+      }
     }
 
     if (powerLeg >= 10250000 / 2 && singleLeg >= 10250000 / 2) {
-      userDetail.weeklySalaryActivation[9] = true;
-      userDetail.weeklySalaryStartDate[9] = Date.now();
+      if(!userDetail.weeklySalaryActivation[9]){
+        userDetail.weeklySalaryActivation[9] = true;
+        userDetail.powerLeg[9] = powerLeg; 
+        userDetail.otherLeg[9] = singleLeg;
+        userDetail.weeklySalaryStartDate[9] = Date.now();
+      }
     }
 
     if (powerLeg >= 5250000 / 2 && singleLeg >= 5250000 / 2) {
-      userDetail.weeklySalaryActivation[8] = true;
-      userDetail.weeklySalaryStartDate[8] = Date.now();
+      if(!userDetail.weeklySalaryActivation[8]){
+        userDetail.weeklySalaryActivation[8] = true;
+        userDetail.powerLeg[8] = powerLeg; 
+        userDetail.otherLeg[8] = singleLeg;
+        userDetail.weeklySalaryStartDate[8] = Date.now();
+      }
     }
 
     if (powerLeg >= 2750000 / 2 && singleLeg >= 2750000 / 2) {
-      userDetail.weeklySalaryActivation[7] = true;
-      userDetail.weeklySalaryStartDate[7] = Date.now();
+      if(!userDetail.weeklySalaryActivation[7]){
+        userDetail.weeklySalaryActivation[7] = true;
+        userDetail.powerLeg[7] = powerLeg; 
+        userDetail.otherLeg[7] = singleLeg;
+        userDetail.weeklySalaryStartDate[7] = Date.now();
+      }
     }
 
     if (powerLeg >= 1750000 / 2 && singleLeg >= 1750000 / 2) {
-      userDetail.weeklySalaryActivation[6] = true;
-      userDetail.weeklySalaryStartDate[6] = Date.now();
+      if(!userDetail.weeklySalaryActivation[6]){
+        userDetail.weeklySalaryActivation[6] = true;
+        userDetail.powerLeg[6] = powerLeg; 
+        userDetail.otherLeg[6] = singleLeg;
+        userDetail.weeklySalaryStartDate[6] = Date.now();
+      }
     }
 
     if (powerLeg >= 1000000 / 2 && singleLeg >= 1000000 / 2) {
-      userDetail.weeklySalaryActivation[5] = true;
-      userDetail.weeklySalaryStartDate[5] = Date.now();
+      if(!userDetail.weeklySalaryActivation[5]){
+        userDetail.weeklySalaryActivation[5] = true;
+        userDetail.powerLeg[5] = powerLeg; 
+        userDetail.otherLeg[5] = singleLeg;
+        userDetail.weeklySalaryStartDate[5] = Date.now();
+      }
     }
 
     if (powerLeg >= 500000 / 2 && singleLeg >= 500000 / 2) {
-      userDetail.weeklySalaryActivation[4] = true;
-      userDetail.weeklySalaryStartDate[4] = Date.now();
+      if(!userDetail.weeklySalaryActivation[4]){
+        userDetail.weeklySalaryActivation[4] = true;
+        userDetail.powerLeg[4] = powerLeg; 
+        userDetail.otherLeg[4] = singleLeg;
+        userDetail.weeklySalaryStartDate[4] = Date.now();
+      }
     }
 
     if (powerLeg >= 250000 / 2 && singleLeg >= 250000 / 2) {
-      userDetail.weeklySalaryActivation[3] = true;
-      userDetail.weeklySalaryStartDate[3] = Date.now();
+      if(!userDetail.weeklySalaryActivation[3]){
+        userDetail.weeklySalaryActivation[3] = true;
+        userDetail.powerLeg[3] = powerLeg; 
+        userDetail.otherLeg[3] = singleLeg;
+        userDetail.weeklySalaryStartDate[3] = Date.now();
+        console.log('100000 salary started');
+      }
     }
 
     if (powerLeg >= 150000 / 2 && singleLeg >= 150000 / 2) {
-      userDetail.weeklySalaryActivation[2] = true;
-      userDetail.weeklySalaryStartDate[2] = Date.now();
+      if(!userDetail.weeklySalaryActivation[2]){
+        userDetail.weeklySalaryActivation[2] = true;
+        userDetail.powerLeg[2] = powerLeg; 
+        userDetail.otherLeg[2] = singleLeg;
+        userDetail.weeklySalaryStartDate[2] = Date.now();
+        console.log('75000 salary started');
+      }
     }
 
     if (powerLeg >= 75000 / 2 && singleLeg >= 75000 / 2) {
-      userDetail.weeklySalaryActivation[1] = true;
-      userDetail.weeklySalaryStartDate[1] = Date.now();
+      if(!userDetail.weeklySalaryActivation[1]){
+        userDetail.weeklySalaryActivation[1] = true;
+        userDetail.powerLeg[1] = powerLeg; 
+        userDetail.otherLeg[1] = singleLeg;
+        userDetail.weeklySalaryStartDate[1] = Date.now();
+        console.log('50000 salary started');
+      }
+      
     }
 
     if (powerLeg >= 25000 / 2 && singleLeg >= 25000 / 2) {
-      userDetail.weeklySalaryActivation[0] = true;
-      userDetail.weeklySalaryStartDate[0] = Date.now();
+      if(!userDetail.weeklySalaryActivation[0]){
+        userDetail.weeklySalaryActivation[0] = true;
+        userDetail.powerLeg[0] = powerLeg; 
+        userDetail.otherLeg[0] = singleLeg;
+        userDetail.weeklySalaryStartDate[0] = Date.now();
+        console.log('25000 salary started');
+      }
+      
     }
 
 
@@ -801,10 +859,10 @@ exports.calculateDailyProfits = async () => {
     const currentDay = new Date().getDay();
 
     // Skip calculation on Saturday (6) and Sunday (0)
-    // if (currentDay === 0 || currentDay === 6) {
-    //   console.log("No profits calculated on weekends.");
-    //   return;
-    // }
+    if (currentDay === 0 || currentDay === 6) {
+      console.log("No profits calculated on weekends.");
+      return;
+    }
 
     // Calculate daily profit for each user
     for (const user of users) {
@@ -833,9 +891,9 @@ exports.calculateDailyProfits = async () => {
         user.temporaryWallet += dailyProfit;
 
         // Only set claimBonus if today is not Saturday or Sunday
-        // if (currentDay !== 0 && currentDay !== 6) {
-        //   user.claimBonus[i] = true;
-        // }
+        if (currentDay !== 0 && currentDay !== 6) {
+          user.claimBonus[i] = true;
+        }
 
         await user.save();
 

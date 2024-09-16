@@ -10,7 +10,7 @@ const router = express.Router();
 // Payout API Endpoint
 router.post('/payout-request', async (req, res) => {
     const {amount,transactionId}=req.body;
-    const newAmount=Number(amount)-(Number(amount)*6)/100
+    const newAmount=Number(amount)-(Number(amount)*5)/100
     const transactionData = await WithdrawPaymentRequest.findById(transactionId);
     const payload = {
         Apikey: API_KEY,

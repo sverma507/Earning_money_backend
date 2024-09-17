@@ -482,6 +482,7 @@ exports.buyPackage = async (req, res) => {
     user.purchaseDate.push(Date.now());
     user.claimBonus.push(false);
     user.myRoi.push(0);
+    user.business += packageData.price;
 
     // Save the updated user
     await user.save();
@@ -527,6 +528,8 @@ const updateUplineBuisness = async (userId, packageId) => {
       await upline.save();
 
       await updateUplineBuisness(upline, packageId);
+    }else{
+      await checkBusiness();
     }
   } catch (error) {
     console.log("error=>", error);
@@ -534,26 +537,19 @@ const updateUplineBuisness = async (userId, packageId) => {
   }
 };
 
-// cron.schedule("*/5 * * * * *", () => {
-//   console.log("Running Withdrawal status update...");
-//   checkBusiness();
-// });
-
 const checkBusiness = async () => {
   try {
     const users = await User.find({ active: true });
-    console.log("users ==>", users);
-    // const userId = "66e6c7480dd1ce8efe621187"
 
     for (const user of users) {
+    // const user = await User.findById(userId)
       const downlineUsers = (await User.find({ referredBy: user.referralCode })) || [];
-      console.log("downline ===>", downlineUsers);
+      console.log("downline ===>", downlineUsers);  
 
       let businessArray = [];
       let powerLeg = 0;
       let singleLeg = 0;
 
-      // Extract business values
       for (let i = 0; i < downlineUsers.length; i++) {
         businessArray.push(downlineUsers[i].business);
       }
@@ -596,136 +592,92 @@ const checkBusiness = async () => {
   }
 };
 
-
 // cron.schedule('* * * * *', checkBusiness);
 
 const checkSalary = async (userId, powerLeg, singleLeg) => {
-  console.log('salary userId =====> ',userId);
-  console.log('salary powerLeg =====> ',powerLeg);
-  console.log('salary singleLeg =====> ',singleLeg);
-  
+  console.log('salary userId =====> ', userId);
+  console.log('salary powerLeg =====> ', powerLeg);
+  console.log('salary singleLeg =====> ', singleLeg);
+
   try {
     const userDetail = await User.findById(userId);
 
-    if (powerLeg >=  27750000 / 2 && singleLeg >=  27750000 / 2) {
-      if(!userDetail.weeklySalaryActivation[11]){
-        userDetail.weeklySalaryActivation[11] = true;
-        userDetail.powerLeg[11] = powerLeg; 
-        userDetail.otherLeg[11] = singleLeg; 
-        userDetail.weeklySalaryStartDate[11] = Date.now();
-      }
-    } 
-    if (powerLeg >= 17750000 / 2 && singleLeg >= 17750000 / 2) {
-      if(!userDetail.weeklySalaryActivation[10]){
-        userDetail.weeklySalaryActivation[10] = true;
-        userDetail.powerLeg[10] = powerLeg; 
-        userDetail.otherLeg[10] = singleLeg;
-        userDetail.weeklySalaryStartDate[10] = Date.now();
-      }
+    // Initialize arrays if they are undefined or empty
+    userDetail.weeklySalaryActivation = userDetail.weeklySalaryActivation || Array(12).fill(false);
+    userDetail.powerLeg = userDetail.powerLeg || Array(12).fill(0);
+    userDetail.otherLeg = userDetail.otherLeg || Array(12).fill(0);
+    userDetail.weeklySalaryStartDate = userDetail.weeklySalaryStartDate || Array(12).fill(null);
+
+    const salaryTiers = [
+      { index: 0, amount: 25000 },
+      { index: 1, amount: 75000 },
+      { index: 2, amount: 150000 },
+      { index: 3, amount: 250000 },
+      { index: 4, amount: 500000 },
+      { index: 5, amount: 1000000 },
+      { index: 6, amount: 1750000 },
+      { index: 7, amount: 2750000 },
+      { index: 8, amount: 5250000 },
+      { index: 9, amount: 10250000 },
+      { index: 10, amount: 17750000 },
+      { index: 11, amount: 27750000 },
+    ];
+    
+
+    // If both legs are less than 25,000, just add them and return
+    if (powerLeg < 12500 || singleLeg < 12500) {
+      userDetail.powerLeg[0] += powerLeg;
+      userDetail.otherLeg[0] += singleLeg;
+      console.log("Added to power and single leg values without salary activation.");
+      await userDetail.save();
+      return;
     }
 
-    if (powerLeg >= 10250000 / 2 && singleLeg >= 10250000 / 2) {
-      if(!userDetail.weeklySalaryActivation[9]){
-        userDetail.weeklySalaryActivation[9] = true;
-        userDetail.powerLeg[9] = powerLeg; 
-        userDetail.otherLeg[9] = singleLeg;
-        userDetail.weeklySalaryStartDate[9] = Date.now();
-      }
-    }
-
-    if (powerLeg >= 5250000 / 2 && singleLeg >= 5250000 / 2) {
-      if(!userDetail.weeklySalaryActivation[8]){
-        userDetail.weeklySalaryActivation[8] = true;
-        userDetail.powerLeg[8] = powerLeg; 
-        userDetail.otherLeg[8] = singleLeg;
-        userDetail.weeklySalaryStartDate[8] = Date.now();
-      }
-    }
-
-    if (powerLeg >= 2750000 / 2 && singleLeg >= 2750000 / 2) {
-      if(!userDetail.weeklySalaryActivation[7]){
-        userDetail.weeklySalaryActivation[7] = true;
-        userDetail.powerLeg[7] = powerLeg; 
-        userDetail.otherLeg[7] = singleLeg;
-        userDetail.weeklySalaryStartDate[7] = Date.now();
-      }
-    }
-
-    if (powerLeg >= 1750000 / 2 && singleLeg >= 1750000 / 2) {
-      if(!userDetail.weeklySalaryActivation[6]){
-        userDetail.weeklySalaryActivation[6] = true;
-        userDetail.powerLeg[6] = powerLeg; 
-        userDetail.otherLeg[6] = singleLeg;
-        userDetail.weeklySalaryStartDate[6] = Date.now();
-      }
-    }
-
-    if (powerLeg >= 1000000 / 2 && singleLeg >= 1000000 / 2) {
-      if(!userDetail.weeklySalaryActivation[5]){
-        userDetail.weeklySalaryActivation[5] = true;
-        userDetail.powerLeg[5] = powerLeg; 
-        userDetail.otherLeg[5] = singleLeg;
-        userDetail.weeklySalaryStartDate[5] = Date.now();
-      }
-    }
-
-    if (powerLeg >= 500000 / 2 && singleLeg >= 500000 / 2) {
-      if(!userDetail.weeklySalaryActivation[4]){
-        userDetail.weeklySalaryActivation[4] = true;
-        userDetail.powerLeg[4] = powerLeg; 
-        userDetail.otherLeg[4] = singleLeg;
-        userDetail.weeklySalaryStartDate[4] = Date.now();
-      }
-    }
-
-    if (powerLeg >= 250000 / 2 && singleLeg >= 250000 / 2) {
-      if(!userDetail.weeklySalaryActivation[3]){
-        userDetail.weeklySalaryActivation[3] = true;
-        userDetail.powerLeg[3] = powerLeg; 
-        userDetail.otherLeg[3] = singleLeg;
-        userDetail.weeklySalaryStartDate[3] = Date.now();
-        console.log('100000 salary started');
-      }
-    }
-
-    if (powerLeg >= 150000 / 2 && singleLeg >= 150000 / 2) {
-      if(!userDetail.weeklySalaryActivation[2]){
-        userDetail.weeklySalaryActivation[2] = true;
-        userDetail.powerLeg[2] = powerLeg; 
-        userDetail.otherLeg[2] = singleLeg;
-        userDetail.weeklySalaryStartDate[2] = Date.now();
-        console.log('75000 salary started');
-      }
-    }
-
-    if (powerLeg >= 75000 / 2 && singleLeg >= 75000 / 2) {
-      if(!userDetail.weeklySalaryActivation[1]){
-        userDetail.weeklySalaryActivation[1] = true;
-        userDetail.powerLeg[1] = powerLeg; 
-        userDetail.otherLeg[1] = singleLeg;
-        userDetail.weeklySalaryStartDate[1] = Date.now();
-        console.log('50000 salary started');
-      }
+    // Loop through salary tiers and check conditions
+    for (const { index, amount } of salaryTiers) {
+      const halfAmount = amount / 2;
+      console.log('helo ===>',amount);
       
+
+      // Check if both powerLeg and singleLeg are greater than or equal to half of the required amount for this tier
+      if (powerLeg >= halfAmount && singleLeg >= halfAmount) {
+        console.log('added ====>',amount);
+        
+        if (!userDetail.weeklySalaryActivation[index]) {
+          // Salary activation for this tier
+          userDetail.weeklySalaryActivation[index] = true;
+          userDetail.powerLeg[index] = halfAmount;
+          userDetail.otherLeg[index] = halfAmount;
+          userDetail.weeklySalaryStartDate[index] = Date.now();
+
+          // Calculate excess (remaining) values
+          const remainingPowerLeg = powerLeg - halfAmount;
+          const remainingSingleLeg = singleLeg - halfAmount;
+          console.log('remainigPowerLeg ==>',remainingPowerLeg);
+          console.log('remainingSingleLeg ==>',remainingSingleLeg); 
+          
+
+          // Add remaining values to the next available leg
+          if (index + 1 < salaryTiers.length) {
+            userDetail.powerLeg[index + 1] = remainingPowerLeg;
+            userDetail.otherLeg[index + 1] = remainingSingleLeg;
+          }
+
+          console.log(`Salary at tier ${index} started for amount ${amount}`);
+          await userDetail.save();
+
+          // Update powerLeg and singleLeg for further iterations
+          powerLeg = remainingPowerLeg;
+          singleLeg = remainingSingleLeg;
+        }
+      } 
     }
-
-    if (powerLeg >= 25000 / 2 && singleLeg >= 25000 / 2) {
-      if(!userDetail.weeklySalaryActivation[0]){
-        userDetail.weeklySalaryActivation[0] = true;
-        userDetail.powerLeg[0] = powerLeg; 
-        userDetail.otherLeg[0] = singleLeg;
-        userDetail.weeklySalaryStartDate[0] = Date.now();
-        console.log('25000 salary started');
-      }
-      
-    }
-
-
-    await userDetail.save();
   } catch (error) {
     console.log(error);
   }
 };
+
+
 
 // Get User Activity
 exports.getUserActivity = async (req, res) => {

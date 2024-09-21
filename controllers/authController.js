@@ -20,16 +20,16 @@ exports.signup = async (req, res) => {
     // Generate a referral code
     const referralCode = generateReferralCode();
 
-    if(referredBy){
-      const referringUser = await User.findOne({referralCode:referredBy});
-      if(referringUser){
-        referringUser.spinCount += 1;
-        await referringUser.save();
-      }else{
-        return res.status(400).json({ error: `No user found with referral code:- ${referredBy}` });
-      }
+    // if(referredBy){
+    //   const referringUser = await User.findOne({referralCode:referredBy});
+    //   if(referringUser){
+    //     referringUser.spinCount += 1;
+    //     await referringUser.save();
+    //   }else{
+    //     return res.status(400).json({ error: `No user found with referral code:- ${referredBy}` });
+    //   }
 
-    }
+    // }
     
 
     // Create a new user with original password

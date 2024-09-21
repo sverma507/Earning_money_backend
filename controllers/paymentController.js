@@ -122,6 +122,13 @@ exports.withdrawPaymentRequest = async (req, res) => {
   try {
     const { accountNumber, ifscCode, userName, amount, userId } = req.body;
 
+    const tempUser=await User.findById(userId)
+   
+    const tempReferredUsers=await User.find({refferedBy:tempUser.referralCode,active:true})
+    if(tempReferredUsers.length<2){
+      return res.status(400).json({ error: 'Required at least Two user At Direct' });
+    }
+
     console.log("withdraw-request=>", req.body);
 
     // Validate required fields

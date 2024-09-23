@@ -122,29 +122,21 @@ exports.withdrawPaymentRequest = async (req, res) => {
   try {
     const { accountNumber, ifscCode, userName, amount, userId } = req.body;
 
-    const tempUser=await User.findById(userId)
-   
-    const tempReferredUsers=await User.find({refferedBy:tempUser.referralCode,active:true})
-    if(tempReferredUsers.length<2){
-      return res.status(400).json({ error: 'Required at least Two user At Direct' });
-    }
-
-    console.log("withdraw-request=>", req.body);
-
-    // Validate required fields
-    
     if (!accountNumber || !ifscCode || !userName || !amount || !userId) {
       return res.status(400).json({ error: 'All fields are required.' });
     }
 
+    // const tempUser = await User.findById(userId);
    
-
+    // const tempReferredUsers=await User.find({refferedBy:tempUser.referralCode,active:true});
+    
+    
     // Convert amount to number and validate
     const withdrawalAmount = Number(amount);
 
     // Retrieve the user's wallet balance
     const user = await User.findOne({_id:userId});
-    const referredUsers=await User.find({referredBy:user.referralCode})
+    const referredUsers = await User.find({referredBy:user.referralCode,active:true})
     if (!user) {
       return res.status(404).json({ error: 'User not found.' });
     }
@@ -154,29 +146,12 @@ exports.withdrawPaymentRequest = async (req, res) => {
     if(user.withdrawlCount == 1){
       return res.status(400).json({ error: 'You can only withdrawl only once in a day' });
     }
-
-    let status = false;
-    let count = 0;
-
-    for(const referredUser of referredUsers){
-        if(referredUser.active){
-          count++;
-        }
-
-        if(count == 2){
-          status = true;
-          break;
-        }
-    }
-
-    if(!status){
-
-      return res.status(400).json({ error: 'Atleast  two users have to be activated with your referral code ' });
-
-    }
     if (withdrawalAmount > user.wallet) {
       return res.status(400).json({ error: 'Insufficient balance in wallet.' });
-    }else if(withdrawalAmount < 200){
+    }else if(referredUsers.length<2){
+        return res.status(400).json({ error: 'Required at least Two user At Direct' });
+    }
+    else if(withdrawalAmount < 200){
       return res.status(400).json({ error: 'Minimum withdrawal amount is 200.' });
     }
    

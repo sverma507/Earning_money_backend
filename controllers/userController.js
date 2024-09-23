@@ -889,7 +889,7 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
     const currentDate = new Date();
 
     const dayOfWeek = currentDate.getDay();
-    if (dayOfWeek === 6 || dayOfWeek === 0) {
+    if (dayOfWeek === 6 || dayOfWeek === 5) {
       return res.status(400).json({ message: "Salary distribution is not allowed on Saturdays and Sundays." });
     }
 

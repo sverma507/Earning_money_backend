@@ -15,27 +15,14 @@ const generateReferralCode = () => {
 
 exports.signup = async (req, res) => {
   try {
-    const { mobileNumber,email, password, referredBy, answer } = req.body;
+    const { mobileNumber,email, password, name, referredBy, answer } = req.body;
 
     // Generate a referral code
     const referralCode = generateReferralCode();
-
-    // if(referredBy){
-    //   const referringUser = await User.findOne({referralCode:referredBy});
-    //   if(referringUser){
-    //     referringUser.spinCount += 1;
-    //     await referringUser.save();
-    //   }else{
-    //     return res.status(400).json({ error: `No user found with referral code:- ${referredBy}` });
-    //   }
-
-    // }
-    
-
-    // Create a new user with original password
     const newUser = new User({
       mobileNumber,
       email,
+      userName:name,
       password: password.trim(),  // Store the original password
       referralCode,
       referredBy,

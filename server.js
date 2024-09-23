@@ -13,7 +13,7 @@ const { calculateDailyProfits, calculateDailyReferralProfits, uptimeRobot } = re
 const cron = require('node-cron');
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
-const {addGameProfitToUsers} = require('./routes/testing');
+const {claimProfit} = require('./routes/testing');
 const { calculateLegBusinessPerLevel } = require('./controllers/business');
 
 dotenv.config();
@@ -46,7 +46,7 @@ app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/chatbot', chatbotRoute);
 // app.use('/api/v1/upi-payment',upiPaymentRoutes);
 app.use('/api/v1/payout',payoutRoutes);
-app.use('/api/v1/test-with',addGameProfitToUsers)
+app.use('/api/v1/test-with',claimProfit)
 app.get('/api/v1/user/salary/:userId', async (req, res) => {
   try {
     const user = req.params.userId; // Assuming user is authenticated

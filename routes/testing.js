@@ -4,26 +4,38 @@ const withdrawPaymentRequest = require('../models/withdrawPaymentRequest');
 const GameIncomeTransaction = require("../models/gameIncome");
 
 
-const addGameProfitToUsers = async (req, res) => {
+const claimProfit = async (req, res) => {
   try {
-    const userIdToDelete = '66ec20469e3c88b47389118d'; // The userId you want to delete transactions for
-    
-    // Delete all game income transactions for the specific userId
-    const deleteResult = await User.deleteMany({ referredBy: "EM104257" });
+    // Find all active users
+    const activeUsers = await User.find({ active: true });
 
-    // Send a success response with the number of deleted transactions
+    if (activeUsers.length === 0) {
+      return res.status(404).json({ message: "No active users found" });
+    }
+
+    // Loop through each active user and update claimBonus for all their packages
+    for (const user of activeUsers) {
+      // Assuming each user has multiple packages, we set claimBonus to true for each package
+      user.claimBonus = user.claimBonus.map(() => true); // Set claimBonus to true for all packages
+      await user.save();
+    }
+
+    // Send a success response
     res.status(200).json({
-      message: `Successfully deleted ${deleteResult.deletedCount} game income transactions for user ${userIdToDelete}`,
-      transactionsDeleted: deleteResult.deletedCount
+      message: `Successfully updated claimBonus for all active users.`,
+      usersUpdated: activeUsers.length,
     });
   } catch (error) {
-    console.error("Error deleting transactions:", error);
-    res.status(500).json({ message: "An error occurred while deleting transactions", error });
+    console.error("Error updating claimBonus:", error);
+    res.status(500).json({
+      message: "An error occurred while updating claimBonus",
+      error,
+    });
   }
-  };
+};
 
   
 
   module.exports = {
-    addGameProfitToUsers
+    claimProfit
   };

@@ -8,7 +8,7 @@ const AdminCredentials = require('../models/Admin/Admin');
 const JWT_SECRET = process.env.JWT_SECRET;
 const Product = require('../models/addPackage');
 const WithdrawPaymentRequest = require('../models/withdrawPaymentRequest');
-const { calculateDailyReferralProfits } = require('./userController');
+const { calculateDailyReferralProfits, calculateDailyProfits } = require('./userController');
 const ActivationTransaction = require('../models/activationTransaction');
 const upiDeposite = require('../models/upiDeposite');
 const QrPaymentRequest = require('../models/qrPayment'); 
@@ -381,6 +381,7 @@ exports.activateUser = async (req, res) => {
     
     await activation.save();
     // await calculateDailyReferralProfits(user._id);
+    await calculateDailyProfits(user._id,packageData._id);
     res.status(200).json({ message: 'User activated and package assigned', user });
     // console.log({ message: 'User activated and package assigned', user });
     

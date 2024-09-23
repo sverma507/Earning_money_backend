@@ -501,7 +501,7 @@ exports.buyPackage = async (req, res) => {
     await activation.save();
     
     console.log(packageData);
-
+    await this.calculateDailyProfits(user._id,packageData._id);
     await updateUplineBuisness(userId, packageId);
     await checkBusiness();
     res
@@ -739,73 +739,14 @@ exports.claimDailyIncome = async (req, res) => {
 };
 
 // Calculate Daily Profits
-exports.calculateDailyProfits = async () => {
+exports.calculateDailyProfits = async (userId, packageId) => {
   try {
-    const users = await User.find({ active: true });
-
-    // Function to distribute profit to upline users
-    const distributeProfitToUplines = async (
-      originalUser,
-      uplineUser,
-      product,
-      dailyProfit,
-      level
-    ) => {
-      // Get current day of the week
-      const currentDay = new Date().getDay();
-
-      // Skip transaction creation on Saturday (6) and Sunday (0)
-      if (currentDay === 0 || currentDay === 6) {
-        console.log(`Skipping level income transaction for weekends.`);
-        return;
-      }
-
-      if (!uplineUser.referredBy || level > 5) return; // Stop if no upline or beyond 5 levels
-
-      const nextUplineUser = await User.findOne({
-        referralCode: uplineUser.referredBy,
-      });
-
-      if (nextUplineUser) {
-        // Define profit percentages for each level
-        const profitPercentages = {
-          1: 0.1, // 10% for direct referrals
-          2: 0.05, // 5% for second-level referrals
-          3: 0.03, // 3% for third-level referrals
-        };
-
-        const profitPercentage = profitPercentages[level] || 0;
-        const uplineProfit = dailyProfit * profitPercentage;
-
-        // Update upline user's wallet
-        nextUplineUser.wallet += uplineProfit;
-        nextUplineUser.teamIncome += uplineProfit;
-        nextUplineUser.earningWallet += uplineProfit;
-        nextUplineUser.totalEarning += uplineProfit;
-        nextUplineUser.todayEarning += uplineProfit;
-        await nextUplineUser.save();
-
-        // Record the transaction only on weekdays
-        const levelTransaction = new LevelIncomeTransaction({
-          user: nextUplineUser._id,
-          netIncome: uplineProfit,
-          fromUser: originalUser.referralCode, // Use the original user for fromUser
-          amount: dailyProfit,
-          level,
-          package: product.name,
-        });
-        await levelTransaction.save();
-
-        // Recursively distribute profit to the next level
-        await distributeProfitToUplines(
-          originalUser,
-          nextUplineUser,
-          product,
-          dailyProfit,
-          level + 1
-        );
-      }
-    };
+    // Fetch the specific user by userId
+    const user = await User.findById(userId);
+    if (!user) {
+      console.log("User not found");
+      return;
+    }
 
     // Get current day of the week
     const currentDay = new Date().getDay();
@@ -816,51 +757,121 @@ exports.calculateDailyProfits = async () => {
       return;
     }
 
-    // Calculate daily profit for each user
-    for (const user of users) {
-      user.temporaryWallet = 0;
-      user.todayEarning = 0;
-      user.yesterdayWallet = user.wallet;
-      user.withdrawlCount = 0;
+    user.temporaryWallet = 0;
+    user.todayEarning = 0;
+    user.yesterdayWallet = user.wallet;
+    user.withdrawlCount = 0;
 
-      for (let i = 0; i < user.packages.length; i++) {
-        let dailyProfit = 0;
-        const packageId = user.packages[i];
-        user.claimBonus[i] = true;
-        const purchaseDate = user.purchaseDate[i]; // Get the corresponding purchase date
+    // Find the specific package by packageId
+    const packageIndex = user.packages.findIndex(
+      (pkg) => pkg.toString() === packageId.toString()
+    );
 
-        const product = await Product.findById(packageId);
-        if (product) {
-          const daysSincePurchase = Math.floor(
-            (Date.now() - new Date(purchaseDate)) / (1000 * 60 * 60 * 24)
-          );
+    if (packageIndex === -1) {
+      console.log("Package not found for this user");
+      return;
+    }
 
-          if (daysSincePurchase <= product.cycle) {
-            dailyProfit += Number(product.income);
-          }
-        }
+    let dailyProfit = 0;
+    const purchaseDate = user.purchaseDate[packageIndex]; // Get the corresponding purchase date
 
-        user.temporaryWallet += dailyProfit;
+    // Fetch the product details for the packageId
+    const product = await Product.findById(packageId);
+    if (product) {
+      const daysSincePurchase = Math.floor(
+        (Date.now() - new Date(purchaseDate)) / (1000 * 60 * 60 * 24)
+      );
 
-        // Only set claimBonus if today is not Saturday or Sunday
-        if (currentDay !== 0 && currentDay !== 6) {
-          user.claimBonus[i] = true;
-        }
-
-        await user.save();
-
-        if (dailyProfit > 0) {
-          // Distribute profit to upline users
-          await distributeProfitToUplines(user, user, product, dailyProfit, 1); // Pass the original user and the first upline user
-        }
+      // Check if the package is within the product's cycle
+      if (daysSincePurchase <= product.cycle) {
+        dailyProfit += Number(product.income);
       }
     }
 
-    console.log("Daily profits distributed");
+    user.temporaryWallet += dailyProfit;
+
+    // Only set claimBonus if today is not Saturday or Sunday
+    // if (currentDay !== 0 && currentDay !== 6) {
+    //   user.claimBonus[packageIndex] = true;
+    // }
+
+    await user.save();
+
+    if (dailyProfit > 0) {
+      // Distribute profit to upline users
+      await distributeProfitToUplines(user, user, product, dailyProfit, 1); // Pass the original user and the first upline user
+    }
+
+    console.log("Daily profit calculated and distributed for user:", userId);
   } catch (err) {
     console.error("Error calculating daily profits:", err);
   }
 };
+
+// Function to distribute profit to upline users
+const distributeProfitToUplines = async (
+  originalUser,
+  uplineUser,
+  product,
+  dailyProfit,
+  level
+) => {
+  // Get current day of the week
+  const currentDay = new Date().getDay();
+
+  // Skip transaction creation on Saturday (6) and Sunday (0)
+  if (currentDay === 0 || currentDay === 6) {
+    console.log(`Skipping level income transaction for weekends.`);
+    return;
+  }
+
+  if (!uplineUser.referredBy || level > 5) return; // Stop if no upline or beyond 5 levels
+
+  const nextUplineUser = await User.findOne({
+    referralCode: uplineUser.referredBy,
+  });
+
+  if (nextUplineUser) {
+    // Define profit percentages for each level
+    const profitPercentages = {
+      1: 0.1, // 10% for direct referrals
+      2: 0.05, // 5% for second-level referrals
+      3: 0.03, // 3% for third-level referrals
+    };
+
+    const profitPercentage = profitPercentages[level] || 0;
+    const uplineProfit = dailyProfit * profitPercentage;
+
+    // Update upline user's wallet
+    nextUplineUser.wallet += uplineProfit;
+    nextUplineUser.teamIncome += uplineProfit;
+    nextUplineUser.earningWallet += uplineProfit;
+    nextUplineUser.totalEarning += uplineProfit;
+    nextUplineUser.todayEarning += uplineProfit;
+    await nextUplineUser.save();
+
+    // Record the transaction only on weekdays
+    const levelTransaction = new LevelIncomeTransaction({
+      user: nextUplineUser._id,
+      netIncome: uplineProfit,
+      fromUser: originalUser.referralCode, // Use the original user for fromUser
+      amount: dailyProfit,
+      level,
+      package: product.name,
+    });
+    await levelTransaction.save();
+
+    // Recursively distribute profit to the next level
+    await distributeProfitToUplines(
+      originalUser,
+      nextUplineUser,
+      product,
+      dailyProfit,
+      level + 1
+    );
+  }
+};
+
 
 
 
@@ -877,6 +888,11 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
     let updatedUsersCount = 0;
     const currentDate = new Date();
 
+    const dayOfWeek = currentDate.getDay();
+    if (dayOfWeek === 6 || dayOfWeek === 0) {
+      return res.status(400).json({ message: "Salary distribution is not allowed on Saturdays and Sundays." });
+    }
+
     // Iterate over each active user
     for (let user of activeUsers) {
       let walletUpdate = 0;
@@ -884,6 +900,9 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
 
       // Iterate over weeklySalaryActivation array
       for (let i = 0; i < user.weeklySalaryActivation.length; i++) {
+        for(let j=0;j<user.packages.length;j++){
+          user.claimBonus[j] = true;
+        }
         if (user.weeklySalaryActivation[i]) {
           const startDate = new Date(user.weeklySalaryStartDate[i]);
           const salaryPrice = user.weeklySalaryPrice[i];

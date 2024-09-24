@@ -715,7 +715,7 @@ exports.claimDailyIncome = async (req, res) => {
       if (user.packages[i]._id == packageId) {
         console.log("check status");
 
-        user.claimBonus[i] = false;
+        user.claimBonus[i] = true;
         user.myRoi[i] += Number(package.income);
       }
     }
@@ -784,7 +784,7 @@ exports.calculateDailyProfits = async (userId, packageId) => {
 
       // Check if the package is within the product's cycle
       if (daysSincePurchase <= product.cycle) {
-        dailyProfit += Number(product.income);
+        dailyProfit += Number(product.price);
       }
     }
 
@@ -897,12 +897,14 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
     for (let user of activeUsers) {
       let walletUpdate = 0;
       let shouldUpdate = false;
+      for(let j=0;j<user.packages.length;j++){
+        user.claimBonus[j] = false;
+        console.log("bonus Claimed");
+      }
 
       // Iterate over weeklySalaryActivation array
       for (let i = 0; i < user.weeklySalaryActivation.length; i++) {
-        for(let j=0;j<user.packages.length;j++){
-          user.claimBonus[j] = true;
-        }
+        
         if (user.weeklySalaryActivation[i]) {
           const startDate = new Date(user.weeklySalaryStartDate[i]);
           const salaryPrice = user.weeklySalaryPrice[i];

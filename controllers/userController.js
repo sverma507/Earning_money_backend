@@ -784,7 +784,7 @@ exports.calculateDailyProfits = async (userId, packageId) => {
 
       // Check if the package is within the product's cycle
       if (daysSincePurchase <= product.cycle) {
-        dailyProfit += Number(product.price);
+        dailyProfit += Number(product.income);
       }
     }
 
@@ -840,7 +840,7 @@ const distributeProfitToUplines = async (
     };
 
     const profitPercentage = profitPercentages[level] || 0;
-    const uplineProfit = dailyProfit * profitPercentage;
+    const uplineProfit = product.price * profitPercentage;
 
     // Update upline user's wallet
     nextUplineUser.wallet += uplineProfit;
@@ -855,7 +855,7 @@ const distributeProfitToUplines = async (
       user: nextUplineUser._id,
       netIncome: uplineProfit,
       fromUser: originalUser.referralCode, // Use the original user for fromUser
-      amount: dailyProfit,
+      amount: product.price,
       level,
       package: product.name,
     });

@@ -35,6 +35,7 @@ const {
 } = require("../controllers/productController");
 
 const { Adminlogin, AdminRegister } = require("../controllers/adminController");
+const { changePassword } = require("../controllers/authController");
 const router = express.Router();
 
 router.post("/login", Adminlogin);
@@ -44,6 +45,7 @@ router.get("/update-user", adminProtect, updateUserProfile);
 router.put("/user/:id", adminProtect, updateUserBlockedStatus);
 router.get("/unpaid-users", adminProtect, getAllUnPaidUsers);
 router.get("/all-requests", adminProtect, ALLFundRequests);
+router.put("/change-password", adminProtect, changePassword);
 router.put(
   "/update-payment-status/:transactionId",
   adminProtect,

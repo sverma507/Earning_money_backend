@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Admin = require('../models/admin.js');
 const crypto = require('crypto');
 const dotenv = require('dotenv');
+const AdminCredentials = require('../models/Admin/Admin');
 const salaryTransaction = require('../models/salaryTransaction.js');
 dotenv.config();
 
@@ -87,6 +88,59 @@ exports.login = async (req, res) => {
     });
   }
 };
+
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    // Log the request body for debugging
+    console.log(req.body);
+
+    const adminId = "66e531d85b520cdac7ed935b";
+
+    // Fetch the admin from the database using the adminId, ensure you await this operation
+    const admin = await AdminCredentials.findById(adminId);
+
+    // Check if the admin was found
+    if (!admin) {
+      console.log('Admin not found');
+      return res.status(404).send({
+        message: "Admin not found" // Send proper error message if admin not found
+      });
+    }
+
+    // Log the fetched admin for debugging
+    console.log('Admin data:', admin);
+
+    // Compare the provided old password with the stored password
+    if (admin.password !== oldPassword) {
+      return res.status(400).send({
+        message: "Old password is incorrect" // Send specific error message if the old password is incorrect
+      });
+    }
+
+    // Update the password with the new one
+    admin.password = newPassword;
+    await admin.save();
+
+    // If successful, send a success message
+    res.status(200).send({
+      message: "Password changed successfully"
+    });
+
+  } catch (error) {
+    // In case of any other error, log it and send a 500 response with the error message
+    console.error('Error changing password:', error);
+
+    res.status(500).send({
+      message: "Something went wrong",
+      error: error.message // Include the actual error message for debugging
+    });
+  }
+};
+
+
 
 exports.adminLogin = async (req, res) => {
   try {

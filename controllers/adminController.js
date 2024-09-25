@@ -484,7 +484,7 @@ exports.getAllUnPaidUsers = async (req, res) => {
 
 exports.Adminlogin = async (req, res) => {
   const { mobileNumber, password } = req.body;
-  console.log("admin==>",req.body);
+  console.log("admin=========>",req.body);
   try {
     const admin = await AdminCredentials.findOne({ mobileNumber });
     console.log("admin=>", admin);

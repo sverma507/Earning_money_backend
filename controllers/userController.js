@@ -881,7 +881,7 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
     const activeUsers = await User.find({ active: true });
 
     if (!activeUsers.length) {
-      return res.status(404).json({ message: 'No active users found' });
+      return res.status(400).json({ message: 'No active users found' });
     }
 
     let totalWalletUpdate = 0;
@@ -900,6 +900,7 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
       for(let j=0;j<user.packages.length;j++){
         user.claimBonus[j] = false;
         console.log("bonus Claimed");
+        await user.save();
       }
 
       // Iterate over weeklySalaryActivation array

@@ -360,7 +360,6 @@ exports.activateUser = async (req, res) => {
     // console.log('user ==>',user);
     
     user.active = true;
-    // console.log("user,spin=>",user.spinCount);
     user.spinCount += 1;
     user.packages.push(packageData);
     user.purchaseDate.push(Date.now());
@@ -382,11 +381,174 @@ exports.activateUser = async (req, res) => {
     await activation.save();
     // await calculateDailyReferralProfits(user._id);
     await calculateDailyProfits(user._id,packageData._id);
+    await updateUplineBuisness(user._id, packageId);
+    // await checkBusiness();
     res.status(200).json({ message: 'User activated and package assigned', user });
     // console.log({ message: 'User activated and package assigned', user });
     
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+const updateUplineBuisness = async (userId, packageId) => {
+  try {
+    const userData = await User.findById(userId);
+    const productDetails = await Product.findById(packageId);
+    const upline = await User.findOne({ referralCode: userData.referredBy });
+
+    if (upline && upline.active) {
+      upline.business += productDetails.price;
+
+      await upline.save();
+
+      await updateUplineBuisness(upline, packageId);
+    }else{
+      await checkBusiness();
+    }
+  } catch (error) {
+    console.log("error=>", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const checkBusiness = async () => {
+  try {
+    const users = await User.find({ active: true });
+      const userId = "66ebb8ce9e3c88b473890e42";
+    // for (const user of users) {
+    const user = await User.findById(userId)
+      const downlineUsers = (await User.find({ referredBy: user.referralCode })) || [];
+      console.log("downline ===>", downlineUsers);  
+
+      let businessArray = [];
+      let powerLeg = 0;
+      let singleLeg = 0;
+
+      for (let i = 0; i < downlineUsers.length; i++) {
+        businessArray.push(downlineUsers[i].business);
+      }
+      console.log('business array ===>', businessArray);
+
+      // Ensure businessArray contains valid numbers
+      if (businessArray.length === 0) {
+        console.log("No valid business entries found.");
+        return;
+      }
+
+      let totalSum = businessArray.reduce((acc, num) => acc + num, 0);
+      let max = Math.max(...businessArray);
+
+      // Check if any value is greater than the sum of the other values
+      for (let num of businessArray) {
+        let sumOfRemaining = totalSum - num;
+
+        if (num > sumOfRemaining) {
+          powerLeg = num;
+          break; // Return the first number that satisfies the condition
+        }
+      }
+
+      // If no number satisfies the condition, take the largest number as powerLeg
+      if (powerLeg === 0) {
+        powerLeg = max;
+      }
+
+      // Calculate the single leg as the remaining sum
+      singleLeg = totalSum - powerLeg;
+
+      console.log("power ====>", powerLeg);
+      console.log('other ====>', singleLeg);
+
+      await checkSalary(user._id, powerLeg, singleLeg);
+    // }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+// cron.schedule('* * * * *', checkBusiness);
+
+const checkSalary = async (userId, powerLeg, singleLeg) => {
+  console.log('salary userId =====> ', userId);
+  console.log('salary powerLeg =====> ', powerLeg);
+  console.log('salary singleLeg =====> ', singleLeg);
+
+  try {
+    const userDetail = await User.findById(userId);
+
+    // Initialize arrays if they are undefined or empty
+    userDetail.weeklySalaryActivation = userDetail.weeklySalaryActivation || Array(12).fill(false);
+    userDetail.powerLeg = userDetail.powerLeg || Array(12).fill(0);
+    userDetail.otherLeg = userDetail.otherLeg || Array(12).fill(0);
+    userDetail.weeklySalaryStartDate = userDetail.weeklySalaryStartDate || Array(12).fill(null);
+
+    const salaryTiers = [
+      { index: 0, amount: 25000 },
+      { index: 1, amount: 75000 },
+      { index: 2, amount: 150000 },
+      { index: 3, amount: 250000 },
+      { index: 4, amount: 500000 },
+      { index: 5, amount: 1000000 },
+      { index: 6, amount: 1750000 },
+      { index: 7, amount: 2750000 },
+      { index: 8, amount: 5250000 },
+      { index: 9, amount: 10250000 },
+      { index: 10, amount: 17750000 },
+      { index: 11, amount: 27750000 },
+    ];
+    
+
+    // If both legs are less than 25,000, just add them and return
+    if (powerLeg < 12500 || singleLeg < 12500) {
+      userDetail.powerLeg[0] = powerLeg;
+      userDetail.otherLeg[0] = singleLeg;
+      console.log("Added to power and single leg values without salary activation.");
+      await userDetail.save();
+      return;
+    }
+
+    // Loop through salary tiers and check conditions
+    for (const { index, amount } of salaryTiers) {
+      const halfAmount = amount / 2;
+      console.log('helo ===>',amount);
+      
+
+      // Check if both powerLeg and singleLeg are greater than or equal to half of the required amount for this tier
+      if (powerLeg >= halfAmount && singleLeg >= halfAmount) {
+        console.log('added ====>',amount);
+        
+        if (!userDetail.weeklySalaryActivation[index]) {
+          // Salary activation for this tier
+          userDetail.weeklySalaryActivation[index] = true;
+          userDetail.powerLeg[index] = halfAmount;
+          userDetail.otherLeg[index] = halfAmount;
+          userDetail.weeklySalaryStartDate[index] = Date.now();
+
+          // Calculate excess (remaining) values
+          const remainingPowerLeg = powerLeg - halfAmount;
+          const remainingSingleLeg = singleLeg - halfAmount;
+          console.log('remainigPowerLeg ==>',remainingPowerLeg);
+          console.log('remainingSingleLeg ==>',remainingSingleLeg); 
+          
+
+          // Add remaining values to the next available leg
+          if (index + 1 < salaryTiers.length) {
+            userDetail.powerLeg[index + 1] = remainingPowerLeg;
+            userDetail.otherLeg[index + 1] = remainingSingleLeg;
+          }
+
+          console.log(`Salary at tier ${index} started for amount ${amount}`);
+          await userDetail.save();
+
+          // Update powerLeg and singleLeg for further iterations
+          powerLeg = remainingPowerLeg;
+          singleLeg = remainingSingleLeg;
+        }
+      } 
+    }
+  } catch (error) {
+    console.log(error);
   }
 };
 

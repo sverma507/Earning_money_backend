@@ -503,7 +503,7 @@ exports.buyPackage = async (req, res) => {
     console.log(packageData);
     await this.calculateDailyProfits(user._id,packageData._id);
     await updateUplineBuisness(userId, packageId);
-    await checkBusiness();
+    // await checkBusiness();
     res
       .status(200)
       .json({

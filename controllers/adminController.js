@@ -12,6 +12,7 @@ const { calculateDailyReferralProfits, calculateDailyProfits } = require('./user
 const ActivationTransaction = require('../models/activationTransaction');
 const upiDeposite = require('../models/upiDeposite');
 const QrPaymentRequest = require('../models/qrPayment'); 
+const upiUpdate = require('../models/upiUpdate');
 // const activationTransaction = require('../models/activationTransaction');
 
 
@@ -206,6 +207,32 @@ exports.ALLFundRequests=async(req,res)=>{
 }
 
 
+exports.getUpiDetails = async(req,res) => {
+  try {
+    const upiId = "66f709cbbdab2e9ee9f35a6a";
+    const result = await upiUpdate.findById(upiId);
+    res.status(200).send(result)
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+}
+
+
+exports.updateUpi = async(req,res) => {
+  const {newUpi} = req.body;
+  try {
+    const upiId = "66f709cbbdab2e9ee9f35a6a";
+    const idResult = await upiUpdate.findById(upiId);
+     
+    idResult.name = newUpi;
+
+    await idResult.save();
+
+    res.status(200).send("Upi Updated successfully!")
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+}
 
 
 exports.UpdatePaymentStatus = async (req, res) => {

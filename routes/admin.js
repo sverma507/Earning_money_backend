@@ -23,7 +23,9 @@ const {
   getDownlineUsers,
   getAllQrPaymentRequests,
   approveQRPayment,
-  rejectQRPayment
+  rejectQRPayment,
+  getUpiDetails,
+  updateUpi
 } = require("../controllers/adminController");
 const { adminProtect } = require("../middleware/auth");
 const {
@@ -46,6 +48,8 @@ router.put("/user/:id", adminProtect, updateUserBlockedStatus);
 router.get("/unpaid-users", adminProtect, getAllUnPaidUsers);
 router.get("/all-requests", adminProtect, ALLFundRequests);
 router.put("/change-password", adminProtect, changePassword);
+router.put("/change-upi", adminProtect, updateUpi);
+router.get("/get-upi", adminProtect, getUpiDetails);
 router.put(
   "/update-payment-status/:transactionId",
   adminProtect,

@@ -48,13 +48,16 @@ exports.getQrPaymentTransactions = async (req,res) =>{
 
 exports.addQrPaymentRequest = async (req, res) => {
   try {
-    const { userId, userCode, amount, utrNumber } = req.body;
+    const { userId, userCode, amount, utrNumber,type } = req.body;
+    console.log(req.body);
+    
 
     const newPaymentRequest = new QrPaymentRequest({
       userId,
       userCode,
       amount,
       utrNumber,
+      type
     });
 
     const savedPaymentRequest = await newPaymentRequest.save();
@@ -67,7 +70,7 @@ exports.addQrPaymentRequest = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Failed to request QR Payment ',
+      message: 'Failed to request QR Payment',
       error: error.message,
     });
   }

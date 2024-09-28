@@ -392,6 +392,7 @@ exports.activateUser = async (req, res) => {
     user.purchaseDate.push(Date.now());
     user.claimBonus.push(false);
     user.myRoi.push(0);
+    user.business += packageData.price;
 
     await user.save();
 

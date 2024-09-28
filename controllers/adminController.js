@@ -443,9 +443,9 @@ const updateUplineBuisness = async (userId, packageId) => {
 const checkBusiness = async () => {
   try {
     const users = await User.find({ active: true });
-      const userId = "66ebb8ce9e3c88b473890e42";
-    // for (const user of users) {
-    const user = await User.findById(userId)
+      // const userId = "66ebb8ce9e3c88b473890e42";
+    for (const user of users) {
+    // const user = await User.findById(userId)
       const downlineUsers = (await User.find({ referredBy: user.referralCode })) || [];
       console.log("downline ===>", downlineUsers);  
 
@@ -489,7 +489,7 @@ const checkBusiness = async () => {
       console.log('other ====>', singleLeg);
 
       await checkSalary(user._id, powerLeg, singleLeg);
-    // }
+    }
   } catch (error) {
     console.log(error);
   }

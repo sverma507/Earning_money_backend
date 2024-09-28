@@ -500,10 +500,10 @@ exports.buyPackage = async (req, res) => {
     });
     await activation.save();
     
-    console.log(packageData);
+    // console.log(packageData);
     await this.calculateDailyProfits(user._id,packageData._id);
     await updateUplineBuisness(userId, packageId);
-    // await checkBusiness();
+    await checkBusiness();
     res
       .status(200)
       .json({
@@ -528,8 +528,6 @@ const updateUplineBuisness = async (userId, packageId) => {
       await upline.save();
 
       await updateUplineBuisness(upline, packageId);
-    }else{
-      await checkBusiness();
     }
   } catch (error) {
     console.log("error=>", error);
@@ -540,11 +538,13 @@ const updateUplineBuisness = async (userId, packageId) => {
 const checkBusiness = async () => {
   try {
     const users = await User.find({ active: true });
-      // const userId = "66ebb8ce9e3c88b473890e42";
+    console.log("usersssssss =====>",users.length);
+    
+      // const userId = "66f64b96cde078a8222e36a6";
     for (const user of users) {
-    // const user = await User.findById(user)
+    // const user = await User.findById(userId)
       const downlineUsers = (await User.find({ referredBy: user.referralCode })) || [];
-      console.log("downline ===>", downlineUsers);  
+      // console.log("downline ===>", downlineUsers);  
 
       let businessArray = [];
       let powerLeg = 0;
@@ -558,7 +558,8 @@ const checkBusiness = async () => {
       // Ensure businessArray contains valid numbers
       if (businessArray.length === 0) {
         console.log("No valid business entries found.");
-        return;
+        continue;
+        // return;
       }
 
       let totalSum = businessArray.reduce((acc, num) => acc + num, 0);

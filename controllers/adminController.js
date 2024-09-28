@@ -410,7 +410,7 @@ exports.activateUser = async (req, res) => {
     // await calculateDailyReferralProfits(user._id);
     await calculateDailyProfits(user._id,packageData._id);
     await updateUplineBuisness(user._id, packageId);
-    // await checkBusiness();
+    await checkBusiness();
     res.status(200).json({ message: 'User activated and package assigned', user });
     // console.log({ message: 'User activated and package assigned', user });
     
@@ -431,8 +431,6 @@ const updateUplineBuisness = async (userId, packageId) => {
       await upline.save();
 
       await updateUplineBuisness(upline, packageId);
-    }else{
-      await checkBusiness();
     }
   } catch (error) {
     console.log("error=>", error);
@@ -443,7 +441,7 @@ const updateUplineBuisness = async (userId, packageId) => {
 const checkBusiness = async () => {
   try {
     const users = await User.find({ active: true });
-      // const userId = "66ebb8ce9e3c88b473890e42";
+      const userId = "66f64b96cde078a8222e36a6";
     for (const user of users) {
     // const user = await User.findById(userId)
       const downlineUsers = (await User.find({ referredBy: user.referralCode })) || [];
@@ -461,7 +459,7 @@ const checkBusiness = async () => {
       // Ensure businessArray contains valid numbers
       if (businessArray.length === 0) {
         console.log("No valid business entries found.");
-        return;
+        continue;
       }
 
       let totalSum = businessArray.reduce((acc, num) => acc + num, 0);

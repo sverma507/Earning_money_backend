@@ -6,6 +6,7 @@ const userRoutes = require('./routes/user');
 const adminRoutes = require('./routes/admin');
 const paymentRoutes = require('./routes/payment');
 const chatbotRoute = require('./routes/chatbot');
+const path = require('path');
 const upiPaymentRoutes = require('./routes/upiPayment')
 const payoutRoutes = require('./routes/payout')
 const { calculateDailyProfits, calculateDailyReferralProfits, uptimeRobot } = require('./controllers/userController');
@@ -24,6 +25,7 @@ const app = express();
 app.use(cors());
 
 app.use(express.json());
+
 app.use(fileUpload({
   useTempFiles: true, // Enable temporary file storage for file uploads
   tempFileDir: '/tmp/', // Directory where temp files will be stored

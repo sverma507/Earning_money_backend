@@ -528,8 +528,6 @@ const updateUplineBuisness = async (userId, packageId) => {
       await upline.save();
 
       await updateUplineBuisness(upline, packageId);
-    }else{
-      await checkBusiness();
     }
   } catch (error) {
     console.log("error=>", error);
@@ -540,11 +538,13 @@ const updateUplineBuisness = async (userId, packageId) => {
 const checkBusiness = async () => {
   try {
     const users = await User.find({ active: true });
-
+    console.log("usersssssss =====>",users.length);
+    
+      // const userId = "66f64b96cde078a8222e36a6";
     for (const user of users) {
     // const user = await User.findById(userId)
       const downlineUsers = (await User.find({ referredBy: user.referralCode })) || [];
-      console.log("downline ===>", downlineUsers);  
+      // console.log("downline ===>", downlineUsers);  
 
       let businessArray = [];
       let powerLeg = 0;
@@ -558,7 +558,8 @@ const checkBusiness = async () => {
       // Ensure businessArray contains valid numbers
       if (businessArray.length === 0) {
         console.log("No valid business entries found.");
-        return;
+        continue;
+        // return;
       }
 
       let totalSum = businessArray.reduce((acc, num) => acc + num, 0);
@@ -626,8 +627,8 @@ const checkSalary = async (userId, powerLeg, singleLeg) => {
 
     // If both legs are less than 25,000, just add them and return
     if (powerLeg < 12500 || singleLeg < 12500) {
-      userDetail.powerLeg[0] += powerLeg;
-      userDetail.otherLeg[0] += singleLeg;
+      userDetail.powerLeg[0] = powerLeg;
+      userDetail.otherLeg[0] = singleLeg;
       console.log("Added to power and single leg values without salary activation.");
       await userDetail.save();
       return;
@@ -715,7 +716,7 @@ exports.claimDailyIncome = async (req, res) => {
       if (user.packages[i]._id == packageId) {
         console.log("check status");
 
-        user.claimBonus[i] = false;
+        user.claimBonus[i] = true;
         user.myRoi[i] += Number(package.income);
       }
     }
@@ -840,7 +841,7 @@ const distributeProfitToUplines = async (
     };
 
     const profitPercentage = profitPercentages[level] || 0;
-    const uplineProfit = dailyProfit * profitPercentage;
+    const uplineProfit = product.price * profitPercentage;
 
     // Update upline user's wallet
     nextUplineUser.wallet += uplineProfit;
@@ -855,7 +856,7 @@ const distributeProfitToUplines = async (
       user: nextUplineUser._id,
       netIncome: uplineProfit,
       fromUser: originalUser.referralCode, // Use the original user for fromUser
-      amount: dailyProfit,
+      amount: product.price,
       level,
       package: product.name,
     });
@@ -881,7 +882,7 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
     const activeUsers = await User.find({ active: true });
 
     if (!activeUsers.length) {
-      return res.status(404).json({ message: 'No active users found' });
+      return res.status(400).json({ message: 'No active users found' });
     }
 
     let totalWalletUpdate = 0;
@@ -897,12 +898,15 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
     for (let user of activeUsers) {
       let walletUpdate = 0;
       let shouldUpdate = false;
+      for(let j=0;j<user.packages.length;j++){
+        user.claimBonus[j] = false;
+        console.log("bonus Claimed");
+        await user.save();
+      }
 
       // Iterate over weeklySalaryActivation array
       for (let i = 0; i < user.weeklySalaryActivation.length; i++) {
-        for(let j=0;j<user.packages.length;j++){
-          user.claimBonus[j] = true;
-        }
+        
         if (user.weeklySalaryActivation[i]) {
           const startDate = new Date(user.weeklySalaryStartDate[i]);
           const salaryPrice = user.weeklySalaryPrice[i];

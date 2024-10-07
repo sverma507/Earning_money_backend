@@ -45,12 +45,16 @@ exports.adminProtect = async (req, res, next) => {
 };
 
 
-exports.loginMiddleware = async(req,res,next) => {
+exports.loginMiddleware = async (req, res, next) => {
   try {
-     const decode = jwt.verify(req.headers.authorization,process.env.JWT_SECRET);
-     req.user = decode;
-     next()
+    const token = req.headers.authorization?.split(" ")[1]; // Extract token from the Bearer scheme
+    if (!token) return res.status(401).send({ ok: false, message: "No token provided" });
+
+    const decode = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decode;
+    next();
   } catch (error) {
-     console.log(error);
-  }
-}
+    console.error("JWT verification failed:", error);
+    return res.status(401).send({ ok: false, message: "Invalid or expired token" });
+  }
+};

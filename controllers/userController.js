@@ -500,7 +500,7 @@ exports.buyPackage = async (req, res) => {
     });
     await activation.save();
     
-    console.log(packageData);
+    // console.log(packageData);
     await this.calculateDailyProfits(user._id,packageData._id);
     await updateUplineBuisness(userId, packageId);
     await checkBusiness();

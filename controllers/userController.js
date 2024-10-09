@@ -761,7 +761,6 @@ exports.calculateDailyProfits = async (userId, packageId) => {
     user.temporaryWallet = 0;
     user.todayEarning = 0;
     user.yesterdayWallet = user.wallet;
-    user.withdrawlCount = 0;
 
     // Find the specific package by packageId
     const packageIndex = user.packages.findIndex(
@@ -934,6 +933,8 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
       // Update the user's wallet and save if required
       if (shouldUpdate || walletUpdate > 0) {
         user.wallet += walletUpdate;
+        user.withdrawlCount = 0;
+
         await user.save(); // Save the updated user details
         totalWalletUpdate += walletUpdate;
         updatedUsersCount++;

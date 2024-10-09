@@ -600,7 +600,7 @@ exports.updateUserBlockedStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    user.blocked = blocked;
+    user.blocked = blocked; 
     await user.save();
 
     res.status(200).json({ success: true, message: `User ${blocked ? 'blocked' : 'unblocked'} successfully` });

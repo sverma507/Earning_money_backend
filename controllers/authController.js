@@ -40,8 +40,10 @@ exports.signup = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { mobileNumber, email, password } = req.body;
-    const user = await User.findOne(mobileNumber ? { mobileNumber } : { email });
+    const { referralCode , password } = req.body;
+    console.log("userrrrrrrrrrrrrrr",req.body);
+    
+    const user = await User.findOne({referralCode});
 
     if (!user) {
       return res.status(400).json({

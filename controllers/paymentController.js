@@ -146,9 +146,9 @@ exports.withdrawPaymentRequest = async (req, res) => {
 
     // Check if the user has sufficient balance
    if(user.active){
-    if(user.withdrawlCount == 1){
-      return res.status(400).json({ error: 'You can only withdrawl only once in a day' });
-    }
+    // if(user.withdrawlCount == 1){
+    //   return res.status(400).json({ error: 'You can only withdrawl only once in a day' });
+    // }
     if (withdrawalAmount > user.wallet) {
       return res.status(400).json({ error: 'Insufficient balance in wallet.' });
     }else if(referredUsers.length<2){

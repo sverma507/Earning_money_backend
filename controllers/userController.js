@@ -703,30 +703,36 @@ exports.claimDailyIncome = async (req, res) => {
     // console.log('userClaim ==>',user);
     // console.log('packageClaim ==>',packageData);
    
-    user.temporaryWallet -= packageData.income;
-    // console.log('temp ==>',user.temporaryWallet);
-    
-    user.wallet += packageData.income;
-    user.totalEarning += packageData.income;
-    user.todayEarning += packageData.income;
+   
     // console.log('wallet ==>',user.wallet);
 
     for (let i = 0; i < user.packages.length; i++) {
       const package = await Product.findById(user.packages[i]);
       if (user.packages[i]._id == packageId) {
         console.log("check status");
+        if(user.myRoi[i] >= 2*(package.price) ){
+          return res
+        .status(400)
+        .json({ error: "Please Update Your package and activate with another package to continue the ROI" });
+        }else{
+          user.temporaryWallet -= packageData.income;
+          user.wallet += packageData.income;
+          user.totalEarning += packageData.income;
+          user.todayEarning += packageData.income;
+          user.claimBonus[i] = true;
+          user.myRoi[i] += Number(package.income);
 
-        user.claimBonus[i] = true;
-        user.myRoi[i] += Number(package.income);
+          await user.save();
+        }
+        
       }
     }
-    await user.save();
+   
     console.log("Updated user ==>", user);
 
     const dailyIncome = new DailyIncomeTransaction({
       user: user._id,
       amount: packageData.income,
-
       package: packageData.name,
     });
     await dailyIncome.save();
@@ -898,15 +904,8 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
       let walletUpdate = 0;
       let shouldUpdate = false;
       for(let j=0;j<user.packages.length;j++){
-        const packageData = await Product.findById(user.packages[j])
-        if(user.myRoi[j] == 2*(packageData.price) ){
-          user.packages.splice(j, 1);
-          if(user.packages.length == 1){
-            user.active = false;
-            await user.save();
-          }   
-          await user.save();       
-        }
+        // const packageData = await Product.findById(user.packages[j])
+        
         user.claimBonus[j] = false;
         console.log("bonus Claimed");
         await user.save();

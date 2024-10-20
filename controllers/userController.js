@@ -702,10 +702,10 @@ exports.claimDailyIncome = async (req, res) => {
     const packageData = await Product.findById(packageId);
     // console.log('userClaim ==>',user);
     // console.log('packageClaim ==>',packageData);
-
+   
     user.temporaryWallet -= packageData.income;
     // console.log('temp ==>',user.temporaryWallet);
-
+    
     user.wallet += packageData.income;
     user.totalEarning += packageData.income;
     user.todayEarning += packageData.income;
@@ -898,6 +898,15 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
       let walletUpdate = 0;
       let shouldUpdate = false;
       for(let j=0;j<user.packages.length;j++){
+        const packageData = await Product.findById(user.packages[j])
+        if(user.myRoi[j] == 2*(packageData.price) ){
+          user.packages.splice(j, 1);
+          if(user.packages.length == 1){
+            user.active = false;
+            await user.save();
+          }   
+          await user.save();       
+        }
         user.claimBonus[j] = false;
         console.log("bonus Claimed");
         await user.save();

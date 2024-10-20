@@ -495,21 +495,19 @@ exports.buyPackage = async (req, res) => {
       mobileNumber: user.mobileNumber,
       activateBy: "user",
       package: packageData.name,
-      packagePrice:packageData.price,
+      packagePrice: packageData.price,
       wallet: user.rechargeWallet,
     });
     await activation.save();
-    
+
     // console.log(packageData);
-    await this.calculateDailyProfits(user._id,packageData._id);
+    await this.calculateDailyProfits(user._id, packageData._id);
     await updateUplineBuisness(userId, packageId);
     await checkBusiness();
-    res
-      .status(200)
-      .json({
-        message: "Package purchased successfully",
-        package: packageData,
-      });
+    res.status(200).json({
+      message: "Package purchased successfully",
+      package: packageData,
+    });
   } catch (error) {
     console.log("error=>", error);
     res.status(500).json({ error: error.message });
@@ -538,13 +536,14 @@ const updateUplineBuisness = async (userId, packageId) => {
 const checkBusiness = async () => {
   try {
     const users = await User.find({ active: true });
-    console.log("usersssssss =====>",users.length);
-    
-      // const userId = "66f64b96cde078a8222e36a6";
+    console.log("usersssssss =====>", users.length);
+
+    // const userId = "66f64b96cde078a8222e36a6";
     for (const user of users) {
-    // const user = await User.findById(userId)
-      const downlineUsers = (await User.find({ referredBy: user.referralCode })) || [];
-      // console.log("downline ===>", downlineUsers);  
+      // const user = await User.findById(userId)
+      const downlineUsers =
+        (await User.find({ referredBy: user.referralCode })) || [];
+      // console.log("downline ===>", downlineUsers);
 
       let businessArray = [];
       let powerLeg = 0;
@@ -553,7 +552,7 @@ const checkBusiness = async () => {
       for (let i = 0; i < downlineUsers.length; i++) {
         businessArray.push(downlineUsers[i].business);
       }
-      console.log('business array ===>', businessArray);
+      console.log("business array ===>", businessArray);
 
       // Ensure businessArray contains valid numbers
       if (businessArray.length === 0) {
@@ -584,7 +583,7 @@ const checkBusiness = async () => {
       singleLeg = totalSum - powerLeg;
 
       console.log("power ====>", powerLeg);
-      console.log('other ====>', singleLeg);
+      console.log("other ====>", singleLeg);
 
       await checkSalary(user._id, powerLeg, singleLeg);
     }
@@ -596,18 +595,20 @@ const checkBusiness = async () => {
 // cron.schedule('* * * * *', checkBusiness);
 
 const checkSalary = async (userId, powerLeg, singleLeg) => {
-  console.log('salary userId =====> ', userId);
-  console.log('salary powerLeg =====> ', powerLeg);
-  console.log('salary singleLeg =====> ', singleLeg);
+  console.log("salary userId =====> ", userId);
+  console.log("salary powerLeg =====> ", powerLeg);
+  console.log("salary singleLeg =====> ", singleLeg);
 
   try {
     const userDetail = await User.findById(userId);
 
     // Initialize arrays if they are undefined or empty
-    userDetail.weeklySalaryActivation = userDetail.weeklySalaryActivation || Array(12).fill(false);
+    userDetail.weeklySalaryActivation =
+      userDetail.weeklySalaryActivation || Array(12).fill(false);
     userDetail.powerLeg = userDetail.powerLeg || Array(12).fill(0);
     userDetail.otherLeg = userDetail.otherLeg || Array(12).fill(0);
-    userDetail.weeklySalaryStartDate = userDetail.weeklySalaryStartDate || Array(12).fill(null);
+    userDetail.weeklySalaryStartDate =
+      userDetail.weeklySalaryStartDate || Array(12).fill(null);
 
     const salaryTiers = [
       { index: 0, amount: 25000 },
@@ -623,13 +624,14 @@ const checkSalary = async (userId, powerLeg, singleLeg) => {
       { index: 10, amount: 17750000 },
       { index: 11, amount: 27750000 },
     ];
-    
 
     // If both legs are less than 25,000, just add them and return
     if (powerLeg < 12500 || singleLeg < 12500) {
       userDetail.powerLeg[0] = powerLeg;
       userDetail.otherLeg[0] = singleLeg;
-      console.log("Added to power and single leg values without salary activation.");
+      console.log(
+        "Added to power and single leg values without salary activation."
+      );
       await userDetail.save();
       return;
     }
@@ -637,13 +639,12 @@ const checkSalary = async (userId, powerLeg, singleLeg) => {
     // Loop through salary tiers and check conditions
     for (const { index, amount } of salaryTiers) {
       const halfAmount = amount / 2;
-      console.log('helo ===>',amount);
-      
+      console.log("helo ===>", amount);
 
       // Check if both powerLeg and singleLeg are greater than or equal to half of the required amount for this tier
       if (powerLeg >= halfAmount && singleLeg >= halfAmount) {
-        console.log('added ====>',amount);
-        
+        console.log("added ====>", amount);
+
         if (!userDetail.weeklySalaryActivation[index]) {
           // Salary activation for this tier
           userDetail.weeklySalaryActivation[index] = true;
@@ -654,9 +655,8 @@ const checkSalary = async (userId, powerLeg, singleLeg) => {
           // Calculate excess (remaining) values
           const remainingPowerLeg = powerLeg - halfAmount;
           const remainingSingleLeg = singleLeg - halfAmount;
-          console.log('remainigPowerLeg ==>',remainingPowerLeg);
-          console.log('remainingSingleLeg ==>',remainingSingleLeg); 
-          
+          console.log("remainigPowerLeg ==>", remainingPowerLeg);
+          console.log("remainingSingleLeg ==>", remainingSingleLeg);
 
           // Add remaining values to the next available leg
           if (index + 1 < salaryTiers.length) {
@@ -671,14 +671,12 @@ const checkSalary = async (userId, powerLeg, singleLeg) => {
           powerLeg = remainingPowerLeg;
           singleLeg = remainingSingleLeg;
         }
-      } 
+      }
     }
   } catch (error) {
     console.log(error);
   }
 };
-
-
 
 // Get User Activity
 exports.getUserActivity = async (req, res) => {
@@ -702,19 +700,21 @@ exports.claimDailyIncome = async (req, res) => {
     const packageData = await Product.findById(packageId);
     // console.log('userClaim ==>',user);
     // console.log('packageClaim ==>',packageData);
-   
-   
+
     // console.log('wallet ==>',user.wallet);
 
     for (let i = 0; i < user.packages.length; i++) {
       const package = await Product.findById(user.packages[i]);
       if (user.packages[i]._id == packageId) {
         console.log("check status");
-        if(user.myRoi[i] >= 2*(package.price) ){
+        if (user.myRoi[i] >= 2 * package.price) {
           return res
-        .status(400)
-        .json({ error: "Please Update Your package and activate with another package to continue the ROI" });
-        }else{
+            .status(400)
+            .json({
+              error:
+                "Please Update Your package and activate with another package to continue the ROI",
+            });
+        } else {
           user.temporaryWallet -= packageData.income;
           user.wallet += packageData.income;
           user.totalEarning += packageData.income;
@@ -723,23 +723,25 @@ exports.claimDailyIncome = async (req, res) => {
           user.myRoi[i] += Number(package.income);
 
           await user.save();
+
+          console.log("Updated user ==>", user);
+
+          const dailyIncome = new DailyIncomeTransaction({
+            user: user._id,
+            amount: packageData.income,
+            package: packageData.name,
+          });
+          await dailyIncome.save();
+
+          res
+            .status(200)
+            .json({
+              user,
+              message: "Income is successfully added to your wallet",
+            });
         }
-        
       }
     }
-   
-    console.log("Updated user ==>", user);
-
-    const dailyIncome = new DailyIncomeTransaction({
-      user: user._id,
-      amount: packageData.income,
-      package: packageData.name,
-    });
-    await dailyIncome.save();
-
-    res
-      .status(200)
-      .json({ user, message: "Income is successfully added to your wallet" });
   } catch (error) {
     console.log("error ==>", error);
   }
@@ -878,16 +880,13 @@ const distributeProfitToUplines = async (
   }
 };
 
-
-
-
 exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
   try {
     // Fetch all active users
     const activeUsers = await User.find({ active: true });
 
     if (!activeUsers.length) {
-      return res.status(400).json({ message: 'No active users found' });
+      return res.status(400).json({ message: "No active users found" });
     }
 
     let totalWalletUpdate = 0;
@@ -896,16 +895,21 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
 
     const dayOfWeek = currentDate.getDay();
     if (dayOfWeek === 6 || dayOfWeek === 5) {
-      return res.status(400).json({ message: "Salary distribution is not allowed on Saturdays and Sundays." });
+      return res
+        .status(400)
+        .json({
+          message:
+            "Salary distribution is not allowed on Saturdays and Sundays.",
+        });
     }
 
     // Iterate over each active user
     for (let user of activeUsers) {
       let walletUpdate = 0;
       let shouldUpdate = false;
-      for(let j=0;j<user.packages.length;j++){
+      for (let j = 0; j < user.packages.length; j++) {
         // const packageData = await Product.findById(user.packages[j])
-        
+
         user.claimBonus[j] = false;
         console.log("bonus Claimed");
         await user.save();
@@ -913,21 +917,27 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
 
       // Iterate over weeklySalaryActivation array
       for (let i = 0; i < user.weeklySalaryActivation.length; i++) {
-        
         if (user.weeklySalaryActivation[i]) {
           const startDate = new Date(user.weeklySalaryStartDate[i]);
           const salaryPrice = user.weeklySalaryPrice[i];
 
           // Calculate the number of days since the startDate
-          let daysSinceStart = Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24));
+          let daysSinceStart = Math.floor(
+            (currentDate - startDate) / (1000 * 60 * 60 * 24)
+          );
 
           // Check if the user is within the 25-day window and not on a weekend (Saturday or Sunday)
           if (daysSinceStart < 25) {
             // Calculate the last salary claimed date
-            let lastSalaryClaimedDate = new Date(startDate.getTime() + daysSinceStart * 24 * 60 * 60 * 1000);
+            let lastSalaryClaimedDate = new Date(
+              startDate.getTime() + daysSinceStart * 24 * 60 * 60 * 1000
+            );
 
             // Check if the salary is due (i.e., it's the right time for a new payment)
-            if (currentDate >= lastSalaryClaimedDate && currentDate - lastSalaryClaimedDate >= 24 * 60 * 60 * 1000) {
+            if (
+              currentDate >= lastSalaryClaimedDate &&
+              currentDate - lastSalaryClaimedDate >= 24 * 60 * 60 * 1000
+            ) {
               walletUpdate += salaryPrice;
               shouldUpdate = true;
             }
@@ -955,7 +965,7 @@ exports.updateDailySalaryForAllActiveUsers = async (req, res) => {
       totalWalletUpdate,
     });
   } catch (error) {
-    console.error('Error updating daily salary for active users:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error updating daily salary for active users:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
